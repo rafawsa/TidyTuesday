@@ -1,0 +1,83 @@
+---
+title: "UKpaygap"
+author: "Rafael Santos Abreu"
+date: '2022-06-28'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+```
+
+```{r}
+paygap <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-06-28/paygap.csv')
+
+sic_sections_df <- readr::read_csv('https://raw.githubusercontent.com/elb98rm/uk-sic-codes/master/uk-sic-code-sections.csv')
+
+sic_df <-  readr::read_csv('https://raw.githubusercontent.com/elb98rm/uk-sic-codes/master/uk-sic-codes.csv')
+
+```
+
+```{r}
+masterdf <- 
+paygap %>% 
+  rename(sic_code = sic_codes) %>% 
+  select(employer_id, sic_code, diff_mean_hourly_percent, due_date, date_submitted, diff_median_hourly_percent) %>% 
+  mutate(sic_code = str_split(sic_code,":")) %>% 
+  unnest(sic_code) %>% 
+  mutate(sic_code = as.numeric(sic_code)) %>%
+  left_join(sic_df, by = c("sic_code")) %>% 
+  left_join(sic_sections_df, by = c("sic_section_id" = "id")) %>% 
+  select(-c(id, sic_section_id, description.x)) %>%
+  rename(section_desc = description.y) %>% glimpse
+  
+```
+
+```{r}
+
+masterdf %>% 
+  mutate(year = year(due_date)) %>%
+  filter(year == 2020) %>%
+  ggplot(aes(x=year, y = diff_mean_hourly_percent, color= section_desc))+
+    geom_jitter()+
+  theme(
+    legend.position = "none"
+    )+
+  facet_wrap(~section_desc)
+```
+
+segunda tentativa
+
+Relação de percentual de diferença de ganho comparado com empresas que empregam mais ou menos mulheres
+
+```{r}
+
+paygap %>% 
+  mutate(year = year(due_date)) %>% 
+  filter(year != 2023) %>% 
+  filter(!is.na(diff_mean_hourly_percent)) %>%
+  mutate(female_percent = (female_lower_quartile + female_lower_middle_quartile + female_upper_middle_quartile + female_top_quartile)/4) %>%
+  mutate(parity = case_when(
+    diff_mean_hourly_percent > 5 ~ "men earn 5% more than women",
+    diff_mean_hourly_percent < -5 ~ "women earn 5% more than men",
+    TRUE ~ "approximately equal"
+  )) %>% 
+  mutate(women_employee_majority = female_percent %/% 10 * 10) %>%
+  ggplot(aes(x= women_employee_majority, fill= parity))+
+  geom_bar()+
+  facet_wrap(~year)+
+  labs(
+    title = "Do women earn more in companies that have more women employees?",
+    x= "Percent of women employees",
+    y= "number of companies"
+  )
+
+
+
+
+```
+
+
