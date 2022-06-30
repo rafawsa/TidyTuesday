@@ -10,6 +10,12 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(lubridate)
+install.packages("remotes")
+remotes::install_github("AllanCameron/geomtextpath")
+library(geomtextpath)
+library(remotes)
+library(scales)
+
 ```
 
 ```{r}
@@ -80,4 +86,36 @@ paygap %>%
 
 ```
 
+another one
+
+```{r}
+paygap_summary <- 
+  paygap %>% 
+  filter(employer_size != "Not Provided") %>% 
+  group_by(year(date_submitted),employer_size) %>% 
+  summarise(diff_mean_hourly_percent = mean(diff_mean_hourly_percent, na.rm = TRUE)) %>%
+  rename("year" = "year(date_submitted)") %>% 
+  filter(!year %in% c("2017", "2023")) %>% 
+  mutate(employer_size= factor(employer_size,levels = c("Less than 250", "250 to 499", "500 to 999", "1000 to 4999", "5000 to 19,999", "20,000 or more")))
+  
+paygap_summary %>% 
+  ggplot(aes(x=year, y= diff_mean_hourly_percent/100, group=employer_size, color= employer_size, label = employer_size))+
+  geom_vline(
+    xintercept = seq(2018, 2022, by = 1)
+  )+
+  #geom_point()+
+  #geom_smooth()+
+  geom_textsmooth(linewidth=1)+
+  theme_minimal()+
+  theme(
+    legend.position = "none"
+  )+
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))+
+  labs(
+    title= "Gender pay gap of employers of all sizes in the UK",  
+    x= NULL,
+    y= NULL,
+  )
+  
+```
 
