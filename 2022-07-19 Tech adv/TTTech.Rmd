@@ -8,6 +8,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(gridExtra)
 ```
 
 Setting up the data
@@ -22,32 +23,59 @@ DFtech <-
   technology %>% 
   filter(category == "Energy") %>% 
   filter(year >= "2000") %>% 
-  #filter(variable == c("elec_hydro", "elecprod")) %>% 
   filter(iso3c == "BRA") %>%
-  mutate(newlabes = str_remove(label, "Electricity from ")) 
+  mutate(newlabes = str_remove(label, "Electricity from "))
 
-DFtech %>% 
-  filter(!variable %in% c("elec_hydro", "elecprod")) %>% 
+
+DFnoh <- 
+  DFtech %>% 
+  filter(!variable %in% c("elec_hydro", "elecprod", "elec_cons", "electric_gen_capacity"))
   
 
 
-DFtech %>% 
-  filter(year == "2020") %>% 
-  slice_max(value, n = 5) %>% glimpse()
+DFn <- 
+  DFtech %>% 
+  filter(variable == c("elec_hydro", "elecprod"))
 ```
 
 Making the Graph
 ```{r}
-DFtech %>% 
-  ggplot(aes(x = year, y = value, color = label))+
-  geom_line()+
+g1 <- 
+  DFn %>% 
+  ggplot(aes(x = year, y = value, color = newlabes))+
+  geom_smooth(se=FALSE)+
   theme_minimal()+
   labs(
     title = "Different forms of Energy Production in Brazil",
-    subtitle = "",
+    subtitle = "Hydroelectricity is the most prevalent form of energy production",
     caption = "The data comes from data.nber.org",
-    )+
-  xlab(NULL)+
-  ylab(NULL)
+    x = NULL,
+    y = NULL,
+    color = NULL
+    )
+
+```
+
+Making the second graph
+```{r}
+g2 <- 
+  DFnoh %>% 
+  ggplot(aes(x = year, y = value, color = newlabes))+
+  geom_smooth(se=FALSE)+
+  theme_minimal()+
+  labs(
+    title = "Different forms of Energy Production in Brazil",
+    subtitle = "There is no emphasis on other forms of energy production",
+    caption = "The data comes from data.nber.org",
+    x = NULL,
+    y = NULL,
+    color = NULL
+    )
+
+```
+
+Puttin the two graphs together
+```{r}
+grid.arrange(g1, g2, ncol = 2)
 ```
 
