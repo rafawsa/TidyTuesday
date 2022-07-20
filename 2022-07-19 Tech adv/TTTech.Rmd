@@ -1,0 +1,53 @@
+---
+title: "TTTech"
+author: "Rafael Santos Abreu"
+date: '2022-07-19'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+Setting up the data
+```{r}
+technology <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-07-19/technology.csv')
+
+```
+
+Data Wrangling
+```{r}
+DFtech <- 
+  technology %>% 
+  filter(category == "Energy") %>% 
+  filter(year >= "2000") %>% 
+  #filter(variable == c("elec_hydro", "elecprod")) %>% 
+  filter(iso3c == "BRA") %>%
+  mutate(newlabes = str_remove(label, "Electricity from ")) 
+
+DFtech %>% 
+  filter(!variable %in% c("elec_hydro", "elecprod")) %>% 
+  
+
+
+DFtech %>% 
+  filter(year == "2020") %>% 
+  slice_max(value, n = 5) %>% glimpse()
+```
+
+Making the Graph
+```{r}
+DFtech %>% 
+  ggplot(aes(x = year, y = value, color = label))+
+  geom_line()+
+  theme_minimal()+
+  labs(
+    title = "Different forms of Energy Production in Brazil",
+    subtitle = "",
+    caption = "The data comes from data.nber.org",
+    )+
+  xlab(NULL)+
+  ylab(NULL)
+```
+
